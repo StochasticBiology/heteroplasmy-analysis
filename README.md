@@ -16,7 +16,7 @@ You can then load the `heteroplasmy` package with
 
 The documentation is currently incomplete but we are working on it; please contact us if you have any questions!
 
-The code relies on the `kimura` package https://github.com/lbozhilova/kimura for the numerical calculation of various quantities related to the Kimura distribution. A preprint describing the scientific context is now online here https://www.biorxiv.org/content/10.1101/2022.09.06.506828v1
+The code relies on the `kimura` package https://github.com/lbozhilova/kimura for the numerical calculation of various quantities related to the Kimura distribution. A preprint describing the scientific context is now online here https://www.biorxiv.org/content/10.1101/2022.09.06.506828v1 . The scripts `kimura-issues-package.R` and `kimura-plots-package.R` respectively demonstrate the scientific and statistical issues outlined there, and produce the plots used in that report. As of February 2023 these have been updated to address peer reviewer comments on the manuscript.
 
 Test case
 ------
