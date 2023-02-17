@@ -9,9 +9,11 @@ nbin = 20 # number of bins for for histograms, default 20
 
 # the wrapper loop goes through different (synthetic and experimental) data sources
 # the publication uses indices 1 (0,0.9) repeated 4 times; 4 (Freyer et al.); 9 (0.0.9) repeated 50 times
+# edited post review -- now we use 1, 9, 10 (Freyer et al., h0<=0.6)
 # others may be informative
 # there are some index-specific tweaks to the plotting code below because different datasets have different scales etc
-for(expt in c(1,4,9)) {
+#for(expt in c(1,4,9,10)) {
+for(expt in c(1,9,10)) {
   if(expt == 1)        { h = rep(c(0, 0.9), 4)   }
   else if(expt == 2)   { h = rep(c(0.1, 0.5), 8) }
   else if(expt == 3)   { h = c(60, 68, 72, 78, 62, 52, 71, 59, 59, 64, 64, 65, 76, 56, 71, 74, 72, 63, 64, 64, 64, 65, 63, 42)/100 } # Zhang et al. P8A
@@ -21,7 +23,9 @@ for(expt in c(1,4,9)) {
   else if(expt == 7)   { h = c(rep(0, 15), ((1:40)/200)**2) }
   else if(expt == 8)   { h = round(c(rep(0, 15), ((1:40)/200)**2)*100)/100 }
   else if(expt == 9)   { h = rep(c(0, 0.9), 50)   }
-  
+  else if(expt == 10)  { h = c(0.73,0.69,0.68,0.77,0.34,0.58,0.00,0.69,0.57,0.64,0.75,0.39,0.22,0.87,0.74,0.75,0.31,0.78,0.54,0.66,0.63,0.53,0.62,0.54,0.66,0.71,0.75,0.62,0.69,0.75,0.27,0.64,0.81,0.63,0.61,0.7,0.52,0.5,0.28,0.45,0.80,0.69,0.66,0.67,0.6,0.73,0.45,0.54,0.62,0.68,0.64,0.51,0.64,0.38,0.45,0.65,0.67,0.62,0.76,0.67,0.44,0.63,0.85,0.75,0.73,0.72,0.67,0.17,0.73,0.73,0.71,0.79,0.67,0.66,0.72,0.47,0.62,0.7,0.62,0.57,0.7,0.61,0.62,0.6,0.61,0.54,0.62,0.45,0.3,0.56,0.53,0.53) }
+
+    if(expt == 10) { h[h==0] = 1e-6 }
   # first, estimate parameters using our various approaches
   mom.best = estimate_parameters(h)
   mom.p = mom.best[1]
@@ -34,10 +38,10 @@ for(expt in c(1,4,9)) {
   mks.b = mks.best[2]
   
   # use the Monte Carlo KS test with these different parameterisations
-  t1 = test_kimura(h, num_MC = 10000)
-  t1.a = test_kimura_par(h, mom.p, mom.b, num_MC = 10000)
-  t2 = test_kimura_par(h, ml.p, ml.b, num_MC = 10000)
-  t3 = test_kimura_par(h, mks.p, mks.b, num_MC = 10000)
+  t1 = test_kimura(h, num_MC = 10000,round=F)
+  t1.a = test_kimura_par(h, mom.p, mom.b, num_MC = 10000,round=F)
+  t2 = test_kimura_par(h, ml.p, ml.b, num_MC = 10000,round=F)
+  t3 = test_kimura_par(h, mks.p, mks.b, num_MC = 10000,round=F)
   # first two vals should be identical, final value should be higher that all others
   c(t1$p.value, t1.a$p.value, t2$p.value, t3$p.value)
   
@@ -62,8 +66,8 @@ for(expt in c(1,4,9)) {
   df$Fit = factor(df$Fit, levels=c("Moments", "Max lik", "Min KS"))
   
   # index-specific positioning of data scatter (below histograms)
-  if(expt == 4) {yoff = -0.02}
-  else {yoff = -0.05}
+  if(expt == 4) {yoff = -0.02
+  } else {yoff = -0.05}
   
   # plot histograms and data scatter
   g1 = ggplot(df, aes(x=h, y=p, fill = Fit, color=Fit)) +
@@ -73,46 +77,53 @@ for(expt in c(1,4,9)) {
     geom_jitter(data = data.frame(x = h, y = -0.05), color = "#000000", fill = "#000000", aes(x=x, y=y), width=0, height = 0.01) +
     theme_classic() +
     theme(legend.position="none", axis.text=element_text(size=12), axis.title=element_text(size=14))
-
+  
   ## PLOT 2 -- likelihood surface
   # index-specific plotting of likelihood surface (only for experiment 1)
-if(expt == 1) {
-  # we're going to make a data frame storing likelihood values at each point in a parameter grid
-  hobs = h
-  ll.df = data.frame()
-  minp = max(1/grid,        min(mom.p, ml.p, mks.p)-0.1)*grid
-  maxp = min((grid-1)/grid, max(mom.p, ml.p, mks.p)+0.1)*grid
-  minb = max(1/grid,	    min(mom.b, ml.b, mks.b)-0.1)*grid
-  maxb = min((grid-1)/grid, max(mom.b, ml.b, mks.b)+0.1)*grid
-  
-  # lazily loop through the grid points and add likelihood values at each point
-  for(h0 in (minp:maxp)/grid) {
-    for(b in (minb:maxb)/grid) {
-      ll = -kimura_neg_loglik(c(invtransfun(b), invtransfun(h0)), hobs)
-      ll.df = rbind(ll.df, data.frame(p=h0, b=b, ll=ll))
-    }
-  }
-  # some values diverge; replace with a cutoff
-  ll.df$ll[abs(ll.df$ll) == Inf] = 1000
-  
-  # data frame for specific parameterisations
-  models = data.frame(x=c(mom.p, ml.p, mks.p), y=c(mom.b, ml.b, mks.b), label=c("Moments", "Max lik", "Min KS"))
-  
-  # produce plot with contour map of surface and parameter points
-  g2a = ggplot(ll.df, aes(x = p, y = b, z= ll)) +
-    geom_contour(bins=30) +
-    geom_text_contour(skip=0) +
-    geom_point(data=models, aes(x=x, y=y)) +
-    geom_text(data=models, aes(x=x+0.025,y=y,label=label)) +
-    theme_classic()
+  if(expt == 1 | expt == 10) {
+    # we're going to make a data frame storing likelihood values at each point in a parameter grid
+    hobs = h
+    ll.df = data.frame()
+    minp = min(mom.p, ml.p, mks.p)-0.05
+    maxp = max(mom.p, ml.p, mks.p)+0.05
+    minb = min(mom.b, ml.b, mks.b)-0.025
+    maxb = max(mom.b, ml.b, mks.b)+0.025
     
-  # compute specific parameterisation likelihoods for legend
-  ml.ml = -kimura_neg_loglik(c(invtransfun(ml.b), invtransfun(ml.p)), hobs)
-  mom.ml = -kimura_neg_loglik(c(invtransfun(mom.b), invtransfun(mom.p)), hobs)
-  mks.ml = -kimura_neg_loglik(c(invtransfun(mks.b), invtransfun(mks.p)), hobs)
-  
-  # add legend giving specific values
-  g2a.lab = g2a + annotate("label", x = minp/grid+0.1, y = minb/grid+0.1, label = paste(c("MoM MlL = ", round(mom.ml, digits=2), "\nML MlL = ", round(ml.ml, digits=2), "\nMin KS MlL = ", round(mks.ml, digits=2)), collapse=""))
+    # lazily loop through the grid points and add likelihood values at each point
+    for(h0 in (((1:grid)/grid)*(maxp-minp) + minp)) {
+      for(b in (((1:grid)/grid)*(maxb-minb) + minb)) {
+        ll = -kimura_neg_loglik(c(invtransfun(b), invtransfun(h0)), hobs)
+        if(ll == Inf) {break}
+        ll.df = rbind(ll.df, data.frame(p=h0, b=b, ll=ll))
+      }
+    }
+    # some values diverge; replace with a cutoff
+    ll.df$ll[abs(ll.df$ll) == Inf] = 1000
+    
+    # data frame for specific parameterisations
+    models = data.frame(x=c(mom.p, ml.p, mks.p), y=c(mom.b, ml.b, mks.b), label=c("Moments", "Max lik", "Min KS"))
+    
+    # produce plot with contour map of surface and parameter points
+    g2a = ggplot(ll.df, aes(x = p, y = b, z= ll)) +
+      geom_contour(bins=30) +
+      geom_text_contour(skip=0) +
+      geom_point(data=models, aes(x=x, y=y)) +
+      geom_text(data=models, aes(x=x+0.025,y=y,label=label)) +
+      theme_classic()
+    
+    g2b = ggplot(ll.df[ll.df$ll != 1000,], aes(x = p, y = b, fill= ll)) +
+      geom_tile() +
+      geom_point(data=models, aes(x=x, y=y)) +
+      geom_text(data=models, aes(x=x+0.025,y=y,label=label)) +
+      theme_classic()
+    
+    # compute specific parameterisation likelihoods for legend
+    ml.ml = -kimura_neg_loglik(c(invtransfun(ml.b), invtransfun(ml.p)), hobs)
+    mom.ml = -kimura_neg_loglik(c(invtransfun(mom.b), invtransfun(mom.p)), hobs)
+    mks.ml = -kimura_neg_loglik(c(invtransfun(mks.b), invtransfun(mks.p)), hobs)
+    
+    # add legend giving specific values
+    g2a.lab = g2a + annotate("label", x = minp+0.2, y = minb+0.1, label = paste(c("MoM MlL = ", round(mom.ml, digits=2), "\nML MlL = ", round(ml.ml, digits=2), "\nMin KS MlL = ", round(mks.ml, digits=2)), collapse=""))
   }
   
   ## PLOT 3 -- plot CDFs for data and distributions under different parameterisations
@@ -148,8 +159,9 @@ if(expt == 1) {
   # build data frame to store KS distance values at different parameterisations
   ks.df = data.frame()
   # index-specific tweak of parameter range fo
-  if(expt == 4) { h0range = 0.6 + 0.1*(1:(grid-1))/grid ; brange = 0.95 + 0.025*(1:(grid-1))/grid; }
-  else { h0range = (1:(grid-1))/grid; brange = (1:(grid-1))/grid; }
+  if(expt == 4) { h0range = 0.6 + 0.1*(1:(grid-1))/grid ; brange = 0.95 + 0.025*(1:(grid-1))/grid; 
+  } else if(expt == 10) {h0range = 0.591 + 0.05*(1:(grid-1))/grid ; brange = 0.88 + 0.065*(1:(grid-1))/grid; 
+  }else { h0range = (1:(grid-1))/grid; brange = (1:(grid-1))/grid; }
   
   # lazily loop through parameter range and conpute KS distance for each
   for(h0 in h0range) {
@@ -160,20 +172,21 @@ if(expt == 1) {
     }
   }
   
-    # index-specific tweak for label offset
-    if(expt == 4) {dy = -0.001}
-    else { dy = 0.05 }
-    
-    # plot KS distance surface 
-    g4 = ggplot(ks.df, aes(x = p, y = b, fill= ks)) + geom_tile() + scale_fill_gradient(low="#000088", high="#FFFFFF") + labs(fill="KS dist") + theme_classic()
-    
-    # add specific parameterisations and labels
-    g4.lab = g4+ geom_point(data=models, aes(x=x, y=y), color="#FFFFFF") +
-      geom_text(data=models, aes(x=x,y=y+dy,label=label), color="#FFFFFF") +
-      theme(axis.text=element_text(size=12), axis.title=element_text(size=14))
-    
-    
-    
+  # index-specific tweak for label offset
+  if(expt == 4) {dy = -0.001
+  } else if(expt == 10) {dy = -0.003
+  }  else { dy = 0.05 }
+  
+  # plot KS distance surface 
+  g4 = ggplot(ks.df, aes(x = p, y = b, fill= ks)) + geom_tile() + scale_fill_gradient(low="#000088", high="#FFFFFF") + labs(fill="KS dist") + theme_classic()
+  
+  # add specific parameterisations and labels
+  g4.lab = g4+ geom_point(data=models, aes(x=x, y=y), color="#FFFFFF") +
+    geom_text(data=models, aes(x=x,y=y+dy,label=label), color="#FFFFFF") +
+    theme(axis.text=element_text(size=12), axis.title=element_text(size=14))
+  
+  
+  
   # now output selected plots to files
   # file with all labels for reference
   myres = 2
@@ -182,17 +195,17 @@ if(expt == 1) {
   dev.off()
   # index-specific plot of likelihood surface
   if(expt == 1) {
-  png(paste(c("kimura-plots-ml-", expt, ".png"), collapse=""), width=400*myres, height=400*myres, res=72*myres)
-  grid.arrange(g2a.lab, nrow=1)
-  dev.off()
+    png(paste(c("kimura-plots-ml-", expt, ".png"), collapse=""), width=400*myres, height=400*myres, res=72*myres)
+    grid.arrange(g2a.lab, nrow=1)
+    dev.off()
   }
   # plot without several annotations for clarity
   png(paste(c("kimura-plots-pub-", expt, ".png"), collapse=""), width=800*myres, height=300*myres, res=72*myres)
   grid.arrange(g1, g3+theme(legend.position="none", axis.text.x=element_text(size=12), axis.text.y=element_text(size=12)), g4.lab, nrow=1)
   dev.off()
-
+  
   # output stats for reference
   
-  c(t1$p.value, t1.a$p.value, t2$p.value, t3$p.value)
+  print(paste(c(expt,t1$statistic,t1$p.value, t1.a$statistic, t1.a$p.value, t2$statistic, t2$p.value, t3$statistic, t3$p.value),collapse=" "))
 }
 
