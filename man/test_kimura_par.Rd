@@ -4,7 +4,7 @@
 \alias{test_kimura_par}
 \title{Generalised MC KS test for genetic drift}
 \usage{
-test_kimura_par(h, p, b, num_MC = 1000, round = TRUE)
+test_kimura_par(h, p, b, num_MC = 1000, round = FALSE)
 }
 \arguments{
 \item{h}{A vector containig heteroplasmy measurements. Every observation should be in \code{[0,1]}.}
@@ -15,13 +15,13 @@ test_kimura_par(h, p, b, num_MC = 1000, round = TRUE)
 
 \item{num_MC}{number of Monte Carlo runs}
 
-\item{round}{a logical argument. True if heteroplasmy fractions are rounded to two significant digits.}
+\item{round}{a logical argument. True if heteroplasmy fractions are rounded to two significant digits. Be cautious as rounding can impact the calculated p-values. Default value is FALSE}
 }
 \value{
 object of class htest
 }
 \description{
-This function is a generalisation of the test_kimura function from the lbozhilova/kimura package. It corresponds to a Monte Carlo Kolmogorov-Smirnov test to detect genetic drift by examining deviation from a Kimura distribution. (add references)
+This function is a generalisation of the \emph{test_kimura} function from the \emph{lbozhilova/kimura} package. It corresponds to a Monte Carlo Kolmogorov-Smirnov test to detect genetic drift by examining deviation from a Kimura distribution.
 }
 \examples{
 data_ex=rnorm(n,0.5,0.1)
