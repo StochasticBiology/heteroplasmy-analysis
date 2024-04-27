@@ -1,5 +1,7 @@
 # heteroplasmy
 
+Using the Kimura distribution to explore mtDNA selection, and heteroplasmy statistics to estimate bottleneck size, can lead to substantial issues in interpretation. In particular, the established fitting approach for the Kimura distribution -- using mean and variance statistics -- almost always gives a bad fit to the distribution. Suggestions of selection based on the badness of the fit cannot then be supported. There are also some issues with estimating errors on heteroplasmy statistics using this approach. This package attempts to help by providing a set of tools for better fitting and more robust interpretation. If you use it and/or these ideas, please cite the Giannakis et al. paper https://doi.org/10.1093/g3journal/jkad068.
+
 `heteroplasmy` is an R package to explore different fits to the Kimura distribution using mtDNA heteroplasmy data, and estimate the standard error of the variance (and other quantities related to uncertainty estimation). Its original home is https://github.com/kostasgian21/heteroplasmy ; there is a fork at https://github.com/StochasticBiology/heteroplasmy-analysis where some ongoing development and applications for a manuscript will be implemented. This repo also contains R scripts that use the package to produce plots illustrating some issues with heteroplasmy fitting and analysis. These scripts are `kimura-issues-package.R` and `kimura-plots-package.R`.
 
 To install the `heteroplasmy` package you will need the `devtools` R library. If you have this, you can ignore the first line below.
